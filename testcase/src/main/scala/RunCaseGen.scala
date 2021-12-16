@@ -1,8 +1,10 @@
 import java.io._
 
 object RunCaseGen extends App {
-  val writer = new PrintWriter(new File("test.txt" ))
-  val genCase = new CaseGen(40)
-  val rec = genCase.gen(writer)
-  writer.close()
+  (20 to 60).foreach(i => {
+    val writer = new PrintWriter(new File("Module" + i + ".txt" ))
+    val genCase = new CaseGen(i)
+    genCase.gen(writer)
+    writer.close()
+  })
 }
