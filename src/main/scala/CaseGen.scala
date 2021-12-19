@@ -1,6 +1,6 @@
 import java.io.Writer
 import scala.util.Random
-import scala.math.sqrt
+import scala.math.{abs, min, random, sqrt}
 
 class Module (val boundary: List[List[Double]], val ports: List[List[List[Double]]]) {
   def print(writer: Writer) = {
@@ -20,20 +20,22 @@ class Module (val boundary: List[List[Double]], val ports: List[List[List[Double
   }
 }
 
-class CaseGen (polyNum: Int, ratio: Double){
+class CaseGen (polyNum: Int, cutNum: Int, ratio: Double){
   val numRec = Random.between(0, polyNum / 3)
   val numL = Random.between((polyNum - numRec) / 2, polyNum - numRec)
   val numT = polyNum - numL - numRec
   val lenLow: Double = 80
   val lenHigh: Double = 150
   def gen(writer: Writer) = {
+//    Random.setSeed(5)
     val area = lenHigh * lenHigh * polyNum * ratio
     val minX = lenHigh * sqrt(polyNum) / 2
     val areaX = Random.between(minX, area / minX)
     val areaY = area / areaX
     val areaPoly = genRectagle(List(0,0), areaX, areaY)
     writer.write("Area:")
-    areaPoly.boundary.foreach(p => writer.write("(" + p(0).formatted("%.1f") + ", " + p(1).formatted("%.1f") + ")"))
+    val areaBoundary = rearrangePoints(cutPoint(areaPoly.boundary, cutNum))
+    areaBoundary.foreach(p => writer.write("(" + p(0).formatted("%.1f") + ", " + p(1).formatted("%.1f") + ")"))
     writer.write("\n")
     writer.write("Rule:GATE(5,5);SD(5,5);GATE_SD(0.5);GATE_ITO(0.5);SD_ITO(0.5)\n")
 
@@ -82,6 +84,80 @@ class CaseGen (polyNum: Int, ratio: Double){
   def change(lPoly: Module, state: Int, x: Double, y: Double): Module = {
     new Module(change(lPoly.boundary, state, x, y), List(change(lPoly.ports(0), state, x, y),
       change(lPoly.ports(1), state, x, y), change(lPoly.ports(2), state, x, y)))
+  }
+
+  def rearrangePoints(ls: List[List[Double]]) = {
+    val maxX = ls.map(p => p(0)).max
+    val maxY = ls.map(p => p(1)).max
+    val part = List(ls.filter(p => p(0) < maxX/2 && p(1) < maxY/2), ls.filter(p => p(0) >= maxX/2 && p(1) < maxY/2),
+      ls.filter(p => p(0) >= maxX/2 && p(1) >= maxY/2), ls.filter(p => p(0) < maxX/2 && p(1) >= maxY/2))
+    val p0 =  part(0).sortWith((a, b) => (a(0) <= b(0) && a(1) >= b(1)))
+    val p1 = part(1).sortWith((a, b) => (a(0) <= b(0) && a(1) <= b(1)))
+    val p2 = part(2).sortWith((a, b) => (a(0) >= b(0) && a(1) <= b(1)))
+    val p3 = part(3).sortWith((a, b) => (a(0) >= b(0) && a(1) >= b(1)))
+    p0 ++ p1 ++ p2 ++ p3
+  }
+
+  def cutPoint(ls: List[List[Double]], cut: Int, cutPs: List[List[Double]] = Nil): List[List[Double]] = {
+    val x = ls.map(p => p(0)).max
+    val y = ls.map(p => p(1)).max
+    val maxX = x / 5
+    val maxY = y / 5
+
+    val allPs = ls ++ cutPs
+    cut match {
+      case 0 => allPs
+      case _ => {
+        val num = Random.between(0, ls.size)
+        val cutP = ls(num)
+        val qx = allPs.find(p => p(0) == cutP(0) && p(1) != cutP(1))
+        val qy = allPs.find(p => p(1) == cutP(1) && p(0) != cutP(0))
+        val dX = min(abs(qy.getOrElse(List[Double](0.0,0.0))(0) - cutP(0)), maxX)
+        val dY = min(abs(qx.getOrElse(List[Double](0.0,0.0))(1) - cutP(1)), maxY)
+        val cX = Random.between(dX / 3, dX * 2 / 3)
+        val cY = Random.between(dY / 3, dY * 2 / 3)
+        val cutAddPsX = if ((cutP(0) < x / 2)) {
+          val newX = cutP(0) + cX
+          if (newX < x / 2) Some(newX) else {
+            println("Warning: not cut X"); None
+          }
+        } else {
+          val newX = cutP(0) - cX
+          if (newX > x / 2) Some(newX) else {
+            println("Warning: not cut X"); None
+          }
+        }
+        val cutAddPsY = if ((cutP(1) < y / 2)) {
+          val newY = cutP(1) + cY
+          if (newY < y / 2) Some(newY) else {
+            println("Warning: not cut Y"); None
+          }
+        } else {
+          val newY = cutP(1) - cY
+          if (newY > y / 2) Some(newY) else {
+            println("Warning: not cut Y"); None
+          }
+        }
+        val cutAddPx = cutAddPsX match {
+          case Some(x) => List(List(x, cutP(1)))
+          case None => Nil
+        }
+        val cutAddPy = cutAddPsY match {
+          case Some(y) => List(List(cutP(0), y))
+          case None => Nil
+        }
+        val cutAddPs = cutAddPx ++ cutAddPy
+        val nCutPs = cutAddPs match {
+          case List(a, b) => List(a(0), b(1)) +: cutPs
+          case _ => cutPs
+        }
+        val nToCutPs = cutAddPs match {
+          case List(a, b) => ls.take(num) ++ cutAddPs ++ ls.takeRight(ls.size - num - 1)
+          case _ => ls
+        }
+        cutPoint(nToCutPs, cut - 1, nCutPs)
+      }
+    }
   }
 
   def genRectagle(xy: List[Double], len: Double, wid: Double) = {
