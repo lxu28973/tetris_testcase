@@ -20,13 +20,14 @@ class Module (val boundary: List[List[Double]], val ports: List[List[List[Double
   }
 }
 
-class CaseGen (polyNum: Int, lenLow: Double, lenHigh: Double){
+class CaseGen (polyNum: Int, ratio: Double){
   val numRec = Random.between(0, polyNum / 3)
   val numL = Random.between((polyNum - numRec) / 2, polyNum - numRec)
   val numT = polyNum - numL - numRec
-
+  val lenLow: Double = 80
+  val lenHigh: Double = 150
   def gen(writer: Writer) = {
-    val area = lenHigh * lenHigh * polyNum
+    val area = lenHigh * lenHigh * polyNum * ratio
     val minX = lenHigh * sqrt(polyNum) / 2
     val areaX = Random.between(minX, area / minX)
     val areaY = area / areaX
