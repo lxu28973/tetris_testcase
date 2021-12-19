@@ -1,5 +1,6 @@
 import java.io.Writer
 import scala.util.Random
+import scala.math.sqrt
 
 class Module (val boundary: List[List[Double]], val ports: List[List[List[Double]]]) {
   def print(writer: Writer) = {
@@ -19,14 +20,15 @@ class Module (val boundary: List[List[Double]], val ports: List[List[List[Double
   }
 }
 
-class CaseGen (polyNum: Int){
-  val numRec = Random.between(0, polyNum)
-  val numL = Random.between(0, polyNum - numRec)
+class CaseGen (polyNum: Int, lenLow: Double, lenHigh: Double){
+  val numRec = Random.between(0, polyNum / 3)
+  val numL = Random.between((polyNum - numRec) / 2, polyNum - numRec)
   val numT = polyNum - numL - numRec
 
   def gen(writer: Writer) = {
-    val area = 14400 * polyNum
-    val areaX = Random.between(120.0, area / 120.0)
+    val area = lenHigh * lenHigh * polyNum
+    val minX = lenHigh * sqrt(polyNum) / 2
+    val areaX = Random.between(minX, area / minX)
     val areaY = area / areaX
     val areaPoly = genRectagle(List(0,0), areaX, areaY)
     writer.write("Area:")
@@ -35,24 +37,24 @@ class CaseGen (polyNum: Int){
     writer.write("Rule:GATE(5,5);SD(5,5);GATE_SD(0.5);GATE_ITO(0.5);SD_ITO(0.5)\n")
 
     (1 to numRec).foreach(i => {
-      val len = Random.between(50.0, 120.0)
-      val wid = Random.between(50.0, 120.0)
+      val len = Random.between(lenLow, lenHigh)
+      val wid = Random.between(lenLow, lenHigh)
       val rec = genRectagle(List(0,0), len, wid)
       writer.write("Module:M" + i + "\n")
       rec.print(writer)
     })
 
     (numRec+1 to numRec+numL).foreach(i => {
-      val len = Random.between(50.0, 120.0)
-      val wid = Random.between(50.0, 120.0)
+      val len = Random.between(lenLow, lenHigh)
+      val wid = Random.between(lenLow, lenHigh)
       val rec = genL(List(0,0), len, wid)
       writer.write("Module:M" + i + "\n")
       rec.print(writer)
     })
 
     (numRec+numL+1 to numRec+numL+numT).foreach(i => {
-      val len = Random.between(50.0, 120.0)
-      val wid = Random.between(50.0, 120.0)
+      val len = Random.between(lenLow, lenHigh)
+      val wid = Random.between(lenLow, lenHigh)
       val rec = genT(List(0,0), len, wid)
       writer.write("Module:M" + i + "\n")
       rec.print(writer)
