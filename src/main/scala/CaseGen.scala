@@ -92,8 +92,8 @@ class CaseGen (polyNum: Int){
   }
 
   def genL(xy: List[Double], len: Double, wid: Double) = {
-    val l1 = Random.between(0, len)
-    val l2 = Random.between(0,wid)
+    val l1 = Random.between(1.0/3 * len, 2.0/3 * len)
+    val l2 = Random.between(1.0/3 * wid, 2.0/3 * wid)
     val rec1 = genRectagle(xy, l1, l2)
     val rec2 = genRectagle(rec1.boundary(1), len - l1, wid)
     val state = Random.between(0, 4)
@@ -106,14 +106,14 @@ class CaseGen (polyNum: Int){
   }
 
   def genT(xy: List[Double], len: Double, wid: Double) = {
-    val l1 = Random.between(0, len)
-    val l2 = Random.between(0, len - l1)
-    val w1 = Random.between(0, wid)
+    val l1 = Random.between(1.0/6 * len, 1.0/2 * len)
+    val l2 = Random.between(1.0/3 * (len - l1), 2.0/3 * (len - l1))
+    val w1 = Random.between(1.0/2 * wid, wid)
     val rec1 = genRectagle(xy, l1, w1)
     val rec2 = genRectagle(rec1.boundary(1), l2, wid)
     val rec3 = genRectagle(rec2.boundary(1), len - l1 - l2, w1)
     val state = Random.between(0, 4)
-    val tPoly = rec1.boundary.take(1) ++ rec3.boundary.takeRight(3) ++ rec2.boundary.slice(1,3) ++ rec1.boundary.takeRight(2)
+    val tPoly = rec1.boundary.take(1) ++ rec3.boundary.takeRight(3) ++ rec2.boundary.slice(2,4) ++ rec1.boundary.takeRight(2)
     val tPort = rec1.ports.take(1) ++ rec2.ports.takeRight(2).take(1) ++ rec3.ports.takeRight(1)
     val tModule = new Module(tPoly, tPort)
     val b = xy(1) + wid/2
