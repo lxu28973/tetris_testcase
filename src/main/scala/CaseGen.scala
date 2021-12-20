@@ -108,7 +108,7 @@ class CaseGen (polyNum: Int, cutNum: Int, ratio: Double){
     cut match {
       case 0 => allPs
       case _ => {
-        val num = Random.between(0, ls.size)
+        val num = Random.between(0, 3)
         val cutP = ls(num)
         val qx = allPs.find(p => p(0) == cutP(0) && p(1) != cutP(1))
         val qy = allPs.find(p => p(1) == cutP(1) && p(0) != cutP(0))
@@ -152,7 +152,7 @@ class CaseGen (polyNum: Int, cutNum: Int, ratio: Double){
           case _ => cutPs
         }
         val nToCutPs = cutAddPs match {
-          case List(a, b) => ls.take(num) ++ cutAddPs ++ ls.takeRight(ls.size - num - 1)
+          case List(a, b) => ls.take(num) ++ ls.takeRight(ls.size - num - 1) ++ cutAddPs
           case _ => ls
         }
         cutPoint(nToCutPs, cut - 1, nCutPs)
